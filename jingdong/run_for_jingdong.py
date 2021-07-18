@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 
 def webdriver_test():
     wd = webdriver.Chrome()
-    wd.get('https://www.taobao.com/')
+    wd.get('https://www.jd.com/')
     time.sleep(300)
 
 
@@ -22,15 +22,22 @@ def run(url):
     while True:
         while True:
             try:
-                wd.find_element_by_link_text("立即购买").click()
-                print('"立即购买" success')
+                wd.find_element_by_link_text("加入购物车").click()
+                print('"加入购物车" success')
                 break
             except NoSuchElementException:
                 pass
         while True:
             try:
-                wd.find_element_by_class_name('go-btn').click()
-                print('"提交订单" success')
+                wd.find_element_by_link_text("去购物车结算").click()
+                print('"去购物车结算" success')
+                break
+            except NoSuchElementException:
+                pass
+        while True:
+            try:
+                wd.find_element_by_link_text("去结算").click()
+                print('"去结算" success')
                 break
             except NoSuchElementException:
                 pass
