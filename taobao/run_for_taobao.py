@@ -38,7 +38,5 @@ def run(url):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        raise IndexError('num of params must be 1')
-    run(sys.argv[1])
+    webdriver_test()
 
