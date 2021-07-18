@@ -1,16 +1,32 @@
-# This is a sample Python script.
+import time
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+from selenium import webdriver
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from taobao import run_for_taobao
 
 
-# Press the green button in the gutter to run the script.
+def webdriver_test():
+    wd = webdriver.Chrome('/opt/homebrew/bin/chromedriver')
+    # wd.get("https://www.tmall.com")
+    wd.get("https://m.tb.cn/h.4CUZbB4?sm=de32de")
+    # time.sleep(20)
+    # wd.find_element_by_id('J_LinkBuy').click()
+    wd.find_element_by_link_text("立即购买").click()
+    time.sleep(0.01)
+    wd.find_element_by_class_name('go-btn').click()
+    time.sleep(60)
+
+    # print('++++++++++++++')
+    # print(wd.find_element_by_class_name("大会员"))
+    # print(wd.find_element_by_name("大会员"))
+    # wd.find_element_by_name("22bfbf13")
+    # wd.find_element_by_id("22bfbf13")
+    # wd.find_element_by_id('data-v-22bfbf13').click()
+    # wd.find_element_by_link_text("请登录").click()
+    # time.sleep(30)
+
+    # wd.find_elements_by_class_name('name')
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    run_for_taobao.webdriver_test()
