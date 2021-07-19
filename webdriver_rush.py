@@ -1,5 +1,6 @@
 import abc
 import logging
+import sys
 import time
 
 from selenium import webdriver
@@ -16,7 +17,8 @@ class MyRush(metaclass=abc.ABCMeta):
         self._log_init(log_level)
 
     def _log_init(self, log_level):
-        logging.basicConfig(format='%(asctime)s - %(name)s - %(threadName)s [%(levelname)s] : %(message)s')
+        logging.basicConfig(format='%(asctime)s - %(name)s - {%(threadName)s} [%(levelname)s] : %(message)s',
+                            stream=sys.stdout)
         self.logger = logging.getLogger(str(self))
         self.logger.setLevel(logging.INFO if log_level is None else log_level)
 
