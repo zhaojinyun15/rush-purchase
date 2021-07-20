@@ -11,11 +11,12 @@ import log_factory
 
 
 class MyRush(threading.Thread, metaclass=abc.ABCMeta):
-    def __init__(self, url, ref_time, thread_name, driver=None, log_level=None):
+    def __init__(self, url, ref_time, thread_name=None, driver=None, log_level=None):
         super().__init__()
         self.url = url
         self.ref_time = ref_time
-        self.setName(thread_name)
+        if thread_name is not None:
+            self.setName(thread_name)
 
         # create a webdriver
         options = webdriver.ChromeOptions()
@@ -47,8 +48,9 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
         time.sleep(300)
 
     def login(self):
-        self.logger.info('Please login in 60 seconds!')
-        time.sleep(120)
+        login_time = 120
+        self.logger.info(f'Please login in {login_time} seconds!')
+        time.sleep(login_time)
 
     @abc.abstractmethod
     def run(self):
@@ -62,23 +64,33 @@ class TaobaoRush(MyRush):
     def run(self):
         self.wd.get(self.url)
         self.login()
+        self._check_ref_time(self.ref_time)
+        self.wd.get(self.url)
         while True:
-            while True:
-                try:
-                    self.wd.find_element_by_link_text("立即购买").click()
-                    self.logger.info('"立即购买" success')
-                    break
-                except NoSuchElementException as e:
-                    self.logger.debug('"立即购买" failed')
-                    self.logger.debug(e.stacktrace)
-            while True:
-                try:
-                    self.wd.find_element_by_class_name('go-btn').click()
-                    self.logger.info('"提交订单" success')
-                    break
-                except NoSuchElementException as e:
-                    self.logger.debug('"提交订单" failed')
-                    self.logger.debug(e.stacktrace)
+            try:
+                self.wd.find_element_by_link_text("立即购买").click()
+                self.logger.info('"立即购买" success')
+                break
+            except NoSuchElementException as e:
+                self.logger.debug('"立即购买" failed')
+        while True:
+            try:
+                self.wd.find_element_by_class_name('go-btn').click()
+                self.logger.info('"提交订单" success')
+                break
+            except NoSuchElementException as e:
+                self.logger.debug('"提交订单" failed')
+        while True:
+            pass
+
+    def _check_ref_time(self, ref_time):
+        self.logger.info(f'ref_time: {str(ref_time)}')
+        while True:
+            now = datetime.datetime.now()
+            if now >= ref_time:
+                break
+            self.logger.debug('now < ref_time')
+        self.logger.info('now time is greater than ref_time')
 
 
 class JingdongRush(MyRush):
