@@ -71,14 +71,14 @@ class TaobaoRush(MyRush):
                 self.wd.find_element_by_link_text("立即购买").click()
                 self.logger.info('"立即购买" success')
                 break
-            except NoSuchElementException as e:
+            except NoSuchElementException:
                 self.logger.debug('"立即购买" failed')
         while True:
             try:
                 self.wd.find_element_by_class_name('go-btn').click()
                 self.logger.info('"提交订单" success')
                 break
-            except NoSuchElementException as e:
+            except NoSuchElementException:
                 self.logger.debug('"提交订单" failed')
         while True:
             pass

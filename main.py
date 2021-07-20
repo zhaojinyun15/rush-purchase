@@ -9,5 +9,5 @@ if __name__ == '__main__':
 
     for i in range(thread_num):
         ref_time = ref_time + datetime.timedelta(seconds=0.1)
-        jd = JingdongRush(url=url, ref_time=ref_time, thread_name=f'thread_{i}', log_level='DEBUG')
+        jd = JingdongRush(url=url, ref_time=ref_time, thread_name=f'thread_{i}')
         jd.start()
