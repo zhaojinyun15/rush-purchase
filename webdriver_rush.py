@@ -12,7 +12,7 @@ import log_factory
 
 
 class MyRush(threading.Thread, metaclass=abc.ABCMeta):
-    def __init__(self, my_conf, thread_name=None):
+    def __init__(self, my_conf, thread_name=None, no_load_image=False):
         super().__init__()
         self.url = my_conf['url']
         self.ref_time = datetime.datetime.strptime(my_conf['ref_time_str'], '%Y-%m-%d %H:%M:%S')
@@ -23,16 +23,17 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
             self.setName(thread_name)
 
         # create a webdriver
-        self._web_driver_init(my_conf.get('driver'))
+        self._web_driver_init(my_conf.get('driver'), no_load_image)
 
         # create a logger
         self._log_init(my_conf.get('log_level'))
 
-    def _web_driver_init(self, driver):
+    def _web_driver_init(self, driver, no_load_image):
         # set options
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        # options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
+        if no_load_image:
+            options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
         # set page load strategy
         desired_capabilities = DesiredCapabilities.CHROME
         desired_capabilities["pageLoadStrategy"] = "normal"
