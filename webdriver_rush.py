@@ -5,7 +5,7 @@ import threading
 import time
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, ElementClickInterceptedException
 from selenium.webdriver import DesiredCapabilities, ActionChains
 
 import log_factory
@@ -36,7 +36,7 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
             options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
         # set page load strategy
         desired_capabilities = DesiredCapabilities.CHROME
-        desired_capabilities["pageLoadStrategy"] = "normal"
+        desired_capabilities["pageLoadStrategy"] = "eager"
         if driver is None:
             self.wd = webdriver.Chrome(options=options, desired_capabilities=desired_capabilities)
         else:
@@ -127,14 +127,14 @@ class TaobaoRush(MyRush):
                 self.wd.find_element_by_link_text("立即购买").click()
                 self.logger.info('"立即购买" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"立即购买" failed')
         while True:
             try:
                 self.wd.find_element_by_class_name('go-btn').click()
                 self.logger.info('"提交订单" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"提交订单" failed')
         while True:
             pass
@@ -154,28 +154,28 @@ class JingdongRush(MyRush):
                 self.wd.find_element_by_link_text("加入购物车").click()
                 self.logger.info('"加入购物车" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"加入购物车" failed')
         while True:
             try:
                 self.wd.find_element_by_link_text("去购物车结算").click()
                 self.logger.info('"去购物车结算" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"去购物车结算" failed')
         while True:
             try:
                 self.wd.find_element_by_link_text("去结算").click()
                 self.logger.info('"去结算" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"去结算" failed')
         while True:
             try:
                 self.wd.find_element_by_id('order-submit').click()
                 self.logger.info('"提交订单" success')
                 break
-            except NoSuchElementException:
+            except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"提交订单" failed')
         while True:
             pass
