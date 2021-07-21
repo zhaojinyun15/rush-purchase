@@ -6,29 +6,39 @@ import time
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import DesiredCapabilities
 
 import log_factory
 
 
 class MyRush(threading.Thread, metaclass=abc.ABCMeta):
-    def __init__(self, url, ref_time, thread_name=None, driver=None, log_level=None):
+    def __init__(self, my_conf, thread_name=None):
         super().__init__()
-        self.url = url
-        self.ref_time = ref_time
+        self.url = my_conf['url']
+        self.ref_time = datetime.datetime.strptime(my_conf['ref_time_str'], '%Y-%m-%d %H:%M:%S')
+        self.advance_time = self.ref_time - datetime.timedelta(minutes=1)
         if thread_name is not None:
             self.setName(thread_name)
 
         # create a webdriver
+        self._web_driver_init(my_conf.get('driver'))
+
+        # create a logger
+        self._log_init(my_conf.get('log_level'))
+
+    def _web_driver_init(self, driver):
+        # set options
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         # options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
+        # set page load strategy
+        desired_capabilities = DesiredCapabilities.CHROME
+        desired_capabilities["pageLoadStrategy"] = "normal"
         if driver is None:
-            self.wd = webdriver.Chrome(options=options)
+            self.wd = webdriver.Chrome(options=options, desired_capabilities=desired_capabilities)
         else:
-            self.wd = webdriver.Chrome(executable_path=driver, options=options)
-
-        # create a logger
-        self._log_init(log_level)
+            self.wd = webdriver.Chrome(executable_path=driver, options=options,
+                                       desired_capabilities=desired_capabilities)
 
     def _log_init(self, log_level):
         self.logger = logging.getLogger(str(self))
@@ -48,9 +58,20 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
         time.sleep(300)
 
     def login(self):
-        login_time = 120
+        login_time = 180
         self.logger.info(f'Please login in {login_time} seconds!')
         time.sleep(login_time)
+
+    def _wait(self):
+        self.logger.info('wait until advance time')
+        self.logger.info(f'ref_time: {str(self.ref_time)}')
+        self.logger.info(f'advance_time: {str(self.advance_time)}')
+        while True:
+            now = datetime.datetime.now()
+            if now >= self.advance_time:
+                break
+            self.logger.debug('now < advance_time')
+        self.logger.info('now time is greater than advance_time')
 
     @abc.abstractmethod
     def run(self):
@@ -62,12 +83,11 @@ class TaobaoRush(MyRush):
         super(TaobaoRush, self).login()
 
     def run(self):
-        self.wd.get(self.url)
         self.login()
-        self._check_ref_time(self.ref_time)
-        self.wd.get(self.url)
+        self._wait()
         while True:
             try:
+                self.wd.get(self.url)
                 self.wd.find_element_by_link_text("立即购买").click()
                 self.logger.info('"立即购买" success')
                 break
@@ -83,24 +103,19 @@ class TaobaoRush(MyRush):
         while True:
             pass
 
-    def _check_ref_time(self, ref_time):
-        self.logger.info(f'ref_time: {str(ref_time)}')
-        while True:
-            now = datetime.datetime.now()
-            if now >= ref_time:
-                break
-            self.logger.debug('now < ref_time')
-        self.logger.info('now time is greater than ref_time')
-
 
 class JingdongRush(MyRush):
+    def login(self):
+        self.wd.get('https://www.jd.com/')
+        self.wd.find_element_by_link_text("你好，请登录").click()
+        super(JingdongRush, self).login()
+
     def run(self):
-        self.wd.get(self.url)
         self.login()
-        self._check_ref_time(self.ref_time)
-        self.wd.get(self.url)
+        self._wait()
         while True:
             try:
+                self.wd.get(self.url)
                 self.wd.find_element_by_link_text("加入购物车").click()
                 self.logger.info('"加入购物车" success')
                 break
@@ -130,18 +145,10 @@ class JingdongRush(MyRush):
         while True:
             pass
 
-    def _check_ref_time(self, ref_time):
-        self.logger.info(f'ref_time: {str(ref_time)}')
-        while True:
-            now = datetime.datetime.now()
-            if now >= ref_time:
-                break
-            self.logger.debug('now < ref_time')
-        self.logger.info('now time is greater than ref_time')
-
 
 if __name__ == '__main__':
     # tb = TaobaoRush('https://www.taobao.com')
     # tb.url_test()
-    jd = JingdongRush('https://www.jd.com/', '2021-07-20 21:31:00')
-    jd.url_test()
+    # jd = JingdongRush('https://www.jd.com/', '2021-07-20 21:31:00')
+    # jd.url_test()
+    pass
