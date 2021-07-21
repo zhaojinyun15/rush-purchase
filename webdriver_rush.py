@@ -5,8 +5,8 @@ import threading
 import time
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver import DesiredCapabilities
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.webdriver import DesiredCapabilities, ActionChains
 
 import log_factory
 
@@ -17,6 +17,8 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
         self.url = my_conf['url']
         self.ref_time = datetime.datetime.strptime(my_conf['ref_time_str'], '%Y-%m-%d %H:%M:%S')
         self.advance_time = self.ref_time - datetime.timedelta(minutes=1)
+        self.account = my_conf.get('account')
+        self.password = my_conf.get('password')
         if thread_name is not None:
             self.setName(thread_name)
 
@@ -39,6 +41,7 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
         else:
             self.wd = webdriver.Chrome(executable_path=driver, options=options,
                                        desired_capabilities=desired_capabilities)
+        self.chains = ActionChains(self.wd)
 
     def _log_init(self, log_level):
         self.logger = logging.getLogger(str(self))
@@ -80,7 +83,39 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
 
 class TaobaoRush(MyRush):
     def login(self):
-        super(TaobaoRush, self).login()
+        # this code block can skip the slide verification!!!
+        self.wd.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": '''
+                    Object.defineProperty(navigator, 'webdriver', {
+                      get: () => undefined
+                    })
+                  '''
+        })
+        self.wd.get('https://login.taobao.com/member/login.jhtml?')
+        if self.account is None or self.password is None:
+            self.logger.warning('account or password missing! please login by hand!')
+            super(TaobaoRush, self).login()
+        else:
+            account_frame = self.wd.find_element_by_id('fm-login-id')
+            account_frame.send_keys(self.account)
+            password_frame = self.wd.find_element_by_id('fm-login-password')
+            password_frame.send_keys(self.password)
+            time.sleep(1)
+            """
+            # deal with slider
+            try:
+                # if has slider  //*[@id='nc_2_n1z']
+                slider = self.wd.find_element_by_xpath("//*[@id='nc_2_n1z']")
+                # drag the slider
+                self.chains.drag_and_drop_by_offset(slider, 258, 0).perform()
+                time.sleep(0.5)
+                # release the slider
+                self.chains.release().perform()
+            except (NoSuchElementException, WebDriverException) as e:
+                self.logger.warning('verification code slider does not work')
+            """
+            self.wd.find_element_by_xpath("//button[@class='fm-button fm-submit password-login']").click()
+            self.logger.info('login success')
 
     def run(self):
         self.login()
@@ -106,8 +141,7 @@ class TaobaoRush(MyRush):
 
 class JingdongRush(MyRush):
     def login(self):
-        self.wd.get('https://www.jd.com/')
-        self.wd.find_element_by_link_text("你好，请登录").click()
+        self.wd.get('https://passport.jd.com/new/login.aspx?')
         super(JingdongRush, self).login()
 
     def run(self):
