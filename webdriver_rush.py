@@ -7,6 +7,9 @@ import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, ElementClickInterceptedException
 from selenium.webdriver import DesiredCapabilities, ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
 import log_factory
 
@@ -14,6 +17,7 @@ import log_factory
 class MyRush(threading.Thread, metaclass=abc.ABCMeta):
     def __init__(self, my_conf, thread_name=None, no_load_image=False):
         super().__init__()
+        self.my_conf = my_conf
         self.url = my_conf['url']
         self.ref_time = datetime.datetime.strptime(my_conf['ref_time_str'], '%Y-%m-%d %H:%M:%S')
         self.advance_time = self.ref_time - datetime.timedelta(minutes=1)
@@ -36,7 +40,7 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
             options.add_experimental_option('prefs', {"profile.managed_default_content_settings.images": 2})
         # set page load strategy
         desired_capabilities = DesiredCapabilities.CHROME
-        desired_capabilities["pageLoadStrategy"] = "eager"
+        desired_capabilities["pageLoadStrategy"] = "normal"
         if driver is None:
             self.wd = webdriver.Chrome(options=options, desired_capabilities=desired_capabilities)
         else:
@@ -81,6 +85,13 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
     def run(self):
         pass
 
+    def _assert_find_element(self, execute_string):
+        try:
+            exec(execute_string)
+            return True
+        except NoSuchElementException:
+            return False
+
 
 class TaobaoRush(MyRush):
     def login(self):
@@ -121,14 +132,18 @@ class TaobaoRush(MyRush):
     def run(self):
         self.login()
         self._wait()
+        """
         while True:
             try:
                 self.wd.get(self.url)
                 self.wd.find_element_by_link_text("立即购买").click()
                 self.logger.info('"立即购买" success')
+                # self.wd.find_element_by_link_text("立即支付定金").click()
+                # self.logger.info('"立即支付定金" success')
                 break
             except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"立即购买" failed')
+                # self.logger.debug('"立即支付定金" failed')
         while True:
             try:
                 self.wd.find_element_by_class_name('go-btn').click()
@@ -136,6 +151,29 @@ class TaobaoRush(MyRush):
                 break
             except (NoSuchElementException, ElementClickInterceptedException):
                 self.logger.debug('"提交订单" failed')
+        """
+
+        # directly operate on cart
+        while True:
+            try:
+                # submit cart
+                self.wd.get('https://cart.taobao.com/cart.htm?')
+                self.wd.find_element_by_id("J_SelectAll1").click()
+                self.wd.find_element_by_link_text("结 算").click()
+                self.logger.info('"结算" success')
+                # assert the next page is already loaded
+                WebDriverWait(self.wd, 10, 0.1).until_not(expected_conditions.presence_of_element_located((By.LINK_TEXT, '结 算')))
+                while not self._assert_find_element("self.wd.find_element_by_class_name('go-btn')") \
+                        and not self._assert_find_element("self.wd.find_element_by_class_name('item-row__text')"):
+                    pass
+
+                # submit order
+                self.wd.find_element_by_class_name('go-btn').click()
+                self.logger.info('"提交订单" success')
+                break
+            except (NoSuchElementException, ElementClickInterceptedException):
+                self.logger.debug('"提交订单" failed')
+
         while True:
             pass
 
