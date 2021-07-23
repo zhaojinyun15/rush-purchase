@@ -15,16 +15,17 @@ import log_factory
 
 
 class MyRush(threading.Thread, metaclass=abc.ABCMeta):
-    def __init__(self, my_conf, thread_name=None, no_load_image=False):
+    def __init__(self, my_conf, thread_index=0, no_load_image=False):
         super().__init__()
         self.my_conf = my_conf
         self.url = my_conf['url']
         self.ref_time = datetime.datetime.strptime(my_conf['ref_time_str'], '%Y-%m-%d %H:%M:%S')
-        self.advance_time = self.ref_time - datetime.timedelta(minutes=1)
+        # self.advance_time = self.ref_time - datetime.timedelta(minutes=1)
+        self.advance_time = self.ref_time + datetime.timedelta(seconds=(thread_index * 0.1))
         self.account = my_conf.get('account')
         self.password = my_conf.get('password')
-        if thread_name is not None:
-            self.setName(thread_name)
+        if thread_index is not None:
+            self.setName(f'thread_{thread_index}')
 
         # create a webdriver
         self._web_driver_init(my_conf.get('driver'), no_load_image)
@@ -71,9 +72,9 @@ class MyRush(threading.Thread, metaclass=abc.ABCMeta):
         time.sleep(login_time)
 
     def _wait(self):
-        self.logger.info('wait until advance time')
         self.logger.info(f'ref_time: {str(self.ref_time)}')
         self.logger.info(f'advance_time: {str(self.advance_time)}')
+        self.logger.info('wait until advance time')
         while True:
             now = datetime.datetime.now()
             if now >= self.advance_time:
@@ -131,6 +132,9 @@ class TaobaoRush(MyRush):
 
     def run(self):
         self.login()
+        # directly operate on cart
+        self.wd.get('https://cart.taobao.com/cart.htm?')
+        self.wd.find_element_by_id("J_SelectAll1").click()
         self._wait()
         """
         while True:
@@ -153,16 +157,13 @@ class TaobaoRush(MyRush):
                 self.logger.debug('"提交订单" failed')
         """
 
-        # directly operate on cart
         while True:
             try:
                 # submit cart
-                self.wd.get('https://cart.taobao.com/cart.htm?')
-                self.wd.find_element_by_id("J_SelectAll1").click()
                 self.wd.find_element_by_link_text("结 算").click()
                 self.logger.info('"结算" success')
                 # assert the next page is already loaded
-                WebDriverWait(self.wd, 10, 0.1).until_not(expected_conditions.presence_of_element_located((By.LINK_TEXT, '结 算')))
+                # WebDriverWait(self.wd, 10, 0.1).until_not(expected_conditions.presence_of_element_located((By.LINK_TEXT, '结 算')))
                 while not self._assert_find_element("self.wd.find_element_by_class_name('go-btn')") \
                         and not self._assert_find_element("self.wd.find_element_by_class_name('item-row__text')"):
                     pass
@@ -172,7 +173,9 @@ class TaobaoRush(MyRush):
                 self.logger.info('"提交订单" success')
                 break
             except (NoSuchElementException, ElementClickInterceptedException):
-                self.logger.debug('"提交订单" failed')
+                self.logger.info('"提交订单" failed')
+                self.wd.get('https://cart.taobao.com/cart.htm?')
+                self.wd.find_element_by_id("J_SelectAll1").click()
 
         while True:
             pass

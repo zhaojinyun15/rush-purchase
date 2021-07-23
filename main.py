@@ -5,14 +5,14 @@ from webdriver_rush import JingdongRush, TaobaoRush
 def run_jd(my_conf):
     thread_num = my_conf['thread_num']
     for i in range(thread_num):
-        jd = JingdongRush(my_conf, f'thread_{i}')
+        jd = JingdongRush(my_conf, thread_index=i)
         jd.start()
 
 
 def run_tb(my_conf):
     thread_num = my_conf['thread_num']
     for i in range(thread_num):
-        tb = TaobaoRush(my_conf, f'thread_{i}', no_load_image=True)
+        tb = TaobaoRush(my_conf, thread_index=i, no_load_image=True)
         tb.start()
 
 
