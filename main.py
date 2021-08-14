@@ -1,16 +1,22 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+import conf
+from webdriver_rush import JingdongRush, TaobaoRush
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+def run_jd(my_conf):
+    thread_num = my_conf['thread_num']
+    for i in range(thread_num):
+        jd = JingdongRush(my_conf, thread_index=i)
+        jd.start()
 
 
-# Press the green button in the gutter to run the script.
+def run_tb(my_conf):
+    thread_num = my_conf['thread_num']
+    for i in range(thread_num):
+        tb = TaobaoRush(my_conf, thread_index=i, no_load_image=True)
+        tb.start()
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # run jingdong or taobao
+    # run_jd(conf.JINGDONG_CONF)
+    run_tb(conf.TAOBAO_CONF)
